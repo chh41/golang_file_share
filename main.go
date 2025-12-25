@@ -206,9 +206,11 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	// 공유 토큰 생성
 	token := randToken(16)
 
-	// 토큰→파일 매핑을 파일로 저장(간단 버전)
+	// 토큰→파일 매핑을 파일로 저장 (저장된파일명|원본파일명)
 	// 실무라면 DB/Redis 권장. 과제용으로는 충분.
-	if err := os.WriteFile(filepath.Join(uploadDir, token+".meta"), []byte(savedName), 0o600); err != nil {
+	origName := header.Filename
+	metadata := fmt.Sprintf("%s|%s", savedName, origName)
+	if err := os.WriteFile(filepath.Join(uploadDir, token+".meta"), []byte(metadata), 0o600); err != nil {
 		writeJSON(w, http.StatusInternalServerError, UploadResp{OK: false, Error: "failed to save metadata"})
 		return
 	}
@@ -345,7 +347,14 @@ func handleShareDownload(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "not found", http.StatusNotFound)
 		return
 	}
-	savedName := strings.TrimSpace(string(b))
+
+	// 메타데이터 파싱 (저장된파일명|원본파일명)
+	parts := strings.SplitN(strings.TrimSpace(string(b)), "|", 2)
+	savedName := parts[0]
+	origName := "download"
+	if len(parts) == 2 {
+		origName = sanitizeFilename(parts[1])
+	}
 
 	// 저장된 파일명도 안전한지 재검증(방어적)
 	if savedName == "" || strings.Contains(savedName, "..") || strings.ContainsAny(savedName, `/\`) {
@@ -371,9 +380,9 @@ func handleShareDownload(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", mime)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Content-Disposition", `attachment; filename="download"`)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, origName))
 
-	http.ServeContent(w, r, "download", time.Now(), f)
+	http.ServeContent(w, r, origName, time.Now(), f)
 }
 
 func validateAndSave(file multipart.File, header *multipart.FileHeader) (string, int64, error) {
@@ -455,6 +464,36 @@ func isSafeToken(s string) bool {
 		}
 	}
 	return true
+}
+
+func sanitizeFilename(name string) string {
+	// 위험한 문자 제거
+	name = strings.ReplaceAll(name, "\x00", "")
+	name = strings.ReplaceAll(name, "..", "")
+	name = strings.ReplaceAll(name, "/", "")
+	name = strings.ReplaceAll(name, "\\", "")
+	name = strings.ReplaceAll(name, "\n", "")
+	name = strings.ReplaceAll(name, "\r", "")
+
+	// 파일명만 추출 (경로 제거)
+	name = filepath.Base(name)
+
+	// 길이 제한 (255자)
+	if len(name) > 255 {
+		ext := filepath.Ext(name)
+		nameWithoutExt := name[:len(name)-len(ext)]
+		if len(nameWithoutExt) > 200 {
+			nameWithoutExt = nameWithoutExt[:200]
+		}
+		name = nameWithoutExt + ext
+	}
+
+	// 빈 문자열이면 기본값
+	if name == "" || name == "." {
+		name = "download"
+	}
+
+	return name
 }
 
 func schemeOf(r *http.Request) string {
