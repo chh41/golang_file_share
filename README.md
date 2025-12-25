@@ -30,8 +30,8 @@ Go로 구현한 안전한 파일 업로드 및 공유 서비스입니다.
 
 ```bash
 # 저장소 클론
-git clone https://github.com/chh41/file_upload.git
-cd file_upload
+git clone https://github.com/chh41/golang_file_share.git
+cd golang_file_share
 
 # 실행
 go run main.go
