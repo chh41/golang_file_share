@@ -93,7 +93,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      max-width: 600px;
+      max-width: 800px;
       margin: 50px auto;
       padding: 20px;
       background: #f5f5f5;
@@ -230,7 +230,7 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      max-width: 600px;
+      max-width: 800px;
       margin: 50px auto;
       padding: 20px;
       background: #f5f5f5;
