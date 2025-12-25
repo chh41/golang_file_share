@@ -162,7 +162,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
       <p><strong>업로드 가능한 확장자:</strong></p>
       <p><code>.png</code> <code>.jpg</code> <code>.jpeg</code> <code>.gif</code> <code>.pdf</code> <code>.txt</code></p>
       <p style="margin-top:15px"><strong>curl 예시:</strong></p>
-      <p><code>curl -F "file=@yourfile.png" http://localhost:8080/upload</code></p>
+      <p><code>curl -F "file=@yourfile.png" https://file-share-go.onrender.com/upload</code></p>
     </div>
   </div>
 </body>

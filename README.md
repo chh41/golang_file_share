@@ -2,6 +2,8 @@
 
 Go로 구현한 안전한 파일 업로드 및 공유 서비스입니다.
 
+🌐 **Live Demo**: https://file-share-go.onrender.com/
+
 ## 주요 기능
 
 - 웹 브라우저와 curl을 통한 파일 업로드
@@ -41,13 +43,13 @@ go run main.go
 ## 사용 방법
 
 ### 웹 브라우저로 업로드
-1. http://localhost:8080 접속
+1. https://file-share-go.onrender.com/ 접속
 2. 파일 선택 후 Upload 버튼 클릭
 3. 생성된 공유 링크로 다운로드
 
 ### curl로 업로드
 ```bash
-curl -F "file=@yourfile.png" http://localhost:8080/upload
+curl -F "file=@yourfile.png" https://file-share-go.onrender.com/upload
 ```
 
 응답 예시:
@@ -55,7 +57,7 @@ curl -F "file=@yourfile.png" http://localhost:8080/upload
 {
   "ok": true,
   "token": "f9404fb7753cf41c8ee4dce4b5f7c2fc",
-  "share_url": "http://localhost:8080/s/f9404fb7753cf41c8ee4dce4b5f7c2fc",
+  "share_url": "https://file-share-go.onrender.com/s/f9404fb7753cf41c8ee4dce4b5f7c2fc",
   "file_name": "3f632dc0953d3ba217fbc054.png",
   "size_bytes": 67
 }
@@ -63,24 +65,14 @@ curl -F "file=@yourfile.png" http://localhost:8080/upload
 
 ### curl로 다운로드
 ```bash
-curl http://localhost:8080/s/{토큰} -o downloaded.png
+curl https://file-share-go.onrender.com/s/{토큰} -o downloaded.png
 ```
 
 ## 기술 스택
 
-### 백엔드
-- **언어**: Go 1.25.4
-- **웹 프레임워크**: 표준 라이브러리 (`net/http`)
-- **외부 의존성**: 없음 (순수 표준 라이브러리만 사용)
-
-### 프론트엔드
-- **HTML**: 업로드 폼 및 결과 페이지
-- **CSS**: 인라인 스타일링
-- **프레임워크**: 없음 (순수 HTML/CSS)
-
-### 배포
-- **플랫폼**: Render
-- **컨테이너**: Docker
+- **백엔드**: Go
+- **프론트엔드**: HTML/CSS
+- **배포**: Render (Docker)
 
 ## 프로젝트 구조
 
