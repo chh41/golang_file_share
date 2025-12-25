@@ -1,0 +1,25 @@
+# 업로드된 파일들 (배포 시 빈 폴더만 유지)
+uploads/*
+!uploads/.gitkeep
+
+# Go 빌드 파일
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 환경 변수
+.env
+
+# macOS
+.DS_Store
