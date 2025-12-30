@@ -18,7 +18,7 @@ import (
 const (
 	addr         = ":8080"
 	uploadDir    = "./uploads"
-	maxUploadMB  = 20
+	maxUploadMB  = 20   // 파일 최대 크기 제한
 	maxFileCount = 1000 // 최대 파일 개수 제한
 )
 
@@ -159,8 +159,11 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
     <div class="info">
       <p><strong>업로드 가능한 확장자:</strong></p>
       <p><code>.png</code> <code>.jpg</code> <code>.jpeg</code> <code>.gif</code> <code>.pdf</code> <code>.txt</code></p>
-      <p style="margin-top:15px"><strong>curl 예시:</strong></p>
+      <p style="margin-top:15px"><strong>curl 업로드 예시:</strong></p>
       <p><code>curl -F "file=@yourfile.png" https://file-share-go.onrender.com/upload</code></p>
+      <p style="margin-top:15px"><strong>curl 다운로드 예시:</strong></p>
+      <p><code>curl -OJ https://file-share-go.onrender.com/s/TOKEN</code></p>
+      <p style="margin-top:5px; font-size:12px; color:#999">* -O: 파일로 저장, -J: 원본 파일명 사용</p>
     </div>
   </div>
 </body>
@@ -406,7 +409,6 @@ func validateAndSave(file multipart.File, header *multipart.FileHeader) (string,
 	saveName := randToken(12) + ext
 	dstPath := filepath.Join(uploadDir, saveName)
 
-	// 파일 권한: 소유자만 읽기/쓰기
 	dst, err := os.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0o600)
 	if err != nil {
 		return "", 0, errors.New("failed to create file")
@@ -426,13 +428,13 @@ func validateAndSave(file multipart.File, header *multipart.FileHeader) (string,
 
 func isAllowedMime(m string) bool {
 	for _, p := range allowedMimePrefix {
-		// "/"나 ";"로 끝나면 prefix 매칭 (예: "image/", "text/plain;")
+		// "/"나 ";"로 끝나면 prefix 매칭
 		if strings.HasSuffix(p, "/") || strings.HasSuffix(p, ";") {
 			if strings.HasPrefix(m, p) {
 				return true
 			}
 		} else {
-			// 정확히 일치 검사 (예: "application/pdf", "text/plain")
+			// 정확히 일치 검사
 			if m == p {
 				return true
 			}
@@ -461,29 +463,42 @@ func isSafeToken(s string) bool {
 }
 
 func sanitizeFilename(name string) string {
-	// 위험한 문자 제거
-	name = strings.ReplaceAll(name, "\x00", "")
-	name = strings.ReplaceAll(name, "..", "")
-	name = strings.ReplaceAll(name, "/", "")
-	name = strings.ReplaceAll(name, "\\", "")
-	name = strings.ReplaceAll(name, "\n", "")
-	name = strings.ReplaceAll(name, "\r", "")
+	var result strings.Builder
+	result.Grow(len(name))
 
-	// 파일명만 추출 (경로 제거)
+	for _, r := range name {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
+			(r >= '0' && r <= '9') ||
+			(r >= '가' && r <= '힣') ||
+			r == ' ' || r == '-' || r == '_' || r == '.' {
+			result.WriteRune(r)
+		}
+	}
+	name = result.String()
+
+	for strings.Contains(name, "..") {
+		name = strings.ReplaceAll(name, "..", ".")
+	}
+
 	name = filepath.Base(name)
 
-	// 길이 제한 (255자)
 	if len(name) > 255 {
 		ext := filepath.Ext(name)
-		nameWithoutExt := name[:len(name)-len(ext)]
+		nameWithoutExt := strings.TrimSuffix(name, ext)
+
+		// 바이트 길이가 200을 넘으면 rune 단위로 안전하게 자르기
 		if len(nameWithoutExt) > 200 {
-			nameWithoutExt = nameWithoutExt[:200]
+			runes := []rune(nameWithoutExt)
+			for len(string(runes)) > 200 && len(runes) > 0 {
+				runes = runes[:len(runes)-1]
+			}
+			nameWithoutExt = string(runes)
 		}
 		name = nameWithoutExt + ext
 	}
 
-	// 빈 문자열이면 기본값
-	if name == "" || name == "." {
+	name = strings.TrimSpace(name)
+	if name == "" || name == "." || name == ".." {
 		name = "download"
 	}
 
