@@ -48,7 +48,6 @@ type UploadResp struct {
 }
 
 func main() {
-	// 업로드 폴더 준비
 	if err := os.MkdirAll(uploadDir, 0o700); err != nil {
 		panic(err)
 	}
@@ -78,7 +77,6 @@ func main() {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	// 간단한 업로드 웹 UI
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -206,8 +204,6 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 	// 공유 토큰 생성
 	token := randToken(16)
 
-	// 토큰→파일 매핑을 파일로 저장 (저장된파일명|원본파일명)
-	// 실무라면 DB/Redis 권장. 과제용으로는 충분.
 	origName := header.Filename
 	metadata := fmt.Sprintf("%s|%s", savedName, origName)
 	if err := os.WriteFile(filepath.Join(uploadDir, token+".meta"), []byte(metadata), 0o600); err != nil {
@@ -217,7 +213,6 @@ func handleUpload(w http.ResponseWriter, r *http.Request) {
 
 	shareURL := fmt.Sprintf("%s://%s/s/%s", schemeOf(r), r.Host, token)
 
-	// 브라우저에서 올린 경우에는 HTML로 링크 보여주기(편의)
 	accept := r.Header.Get("Accept")
 	if strings.Contains(accept, "text/html") {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -407,7 +402,7 @@ func validateAndSave(file multipart.File, header *multipart.FileHeader) (string,
 		return "", 0, fmt.Errorf("mime not allowed: %s", mime)
 	}
 
-	// 저장 파일명은 랜덤 + 확장자 (원본명 그대로 저장 X)
+	// 저장 파일명은 랜덤 + 확장자
 	saveName := randToken(12) + ext
 	dstPath := filepath.Join(uploadDir, saveName)
 
@@ -418,7 +413,6 @@ func validateAndSave(file multipart.File, header *multipart.FileHeader) (string,
 	}
 	defer dst.Close()
 
-	// 이미 읽은 앞부분(buf)을 먼저 쓰고, 나머지 스트림 복사
 	written1, err := dst.Write(buf[:n])
 	if err != nil {
 		return "", 0, errors.New("failed to write file")
@@ -500,7 +494,6 @@ func schemeOf(r *http.Request) string {
 	if r.TLS != nil {
 		return "https"
 	}
-	// 프록시 뒤 배포 대비(nginx 등). 배포 시 헤더 세팅하면 활용 가능.
 	if strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") {
 		return "https"
 	}
